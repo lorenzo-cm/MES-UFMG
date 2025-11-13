@@ -2,6 +2,12 @@ name: Build
 on:
   pull_request:
     types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+  issues: write
+  pull-requests: write
+  
 jobs:
   sonarqube:
     name: SonarQube
@@ -19,7 +25,7 @@ jobs:
 
       - name: Install deps
         run: |
-          pip install -r requirements.txt
+          pip install -r tool/requirements.txt
 
       - name: Generate diff
         run: |
@@ -28,8 +34,10 @@ jobs:
           git diff --unified=0 "$BASE_SHA" "$HEAD_SHA" > diff.patch
 
       - name: Run analyzer with diff
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         run: |
-          python tool/run.py diff.patch > review.md
+          python tool/main.py diff.patch > review.md
 
       - name: Comment on PR with analysis
         uses: peter-evans/create-or-update-comment@v4
