@@ -29,7 +29,7 @@ jobs:
 
       - name: Run analyzer with diff
         run: |
-          python tool/run.py diff.patch > review.md
+          python tool/main.py diff.patch > review.md
 
       - name: Comment on PR with analysis
         uses: peter-evans/create-or-update-comment@v4
