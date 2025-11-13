@@ -1,0 +1,18 @@
+diff --git a/src/api/user.py b/src/api/user.py
+index 3b2f1af..c91f4b0 100644
+--- a/src/api/user.py
++++ b/src/api/user.py
+@@ -25 +25 @@ def get_user(user_id: str):
+-    return {"message": "User found", "id": user_id}
++    return {"status": "ok", "user_id": user_id}
+
+diff --git a/src/services/auth_service.py b/src/services/auth_service.py
+index 91ab4d1..ab3c4e3 100644
+--- a/src/services/auth_service.py
++++ b/src/services/auth_service.py
+@@ -10,0 +11,2 @@ def validate_token(token: str):
++    if not token:
++        raise ValueError("Token cannot be empty")
+@@ -30 +32 @@ def generate_token(user_id: str):
+-    payload = {"user": user_id}
++    payload = {"user_id": user_id}
