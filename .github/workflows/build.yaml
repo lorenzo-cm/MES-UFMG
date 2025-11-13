@@ -1,5 +1,8 @@
 name: Build
 on:
+  push:
+    branches:
+      - main
   pull_request:
     types: [opened, synchronize, reopened]
 
@@ -19,27 +22,32 @@ jobs:
           fetch-depth: 0
 
       - name: Set up Python
+        if: github.event_name == 'pull_request'
         uses: actions/setup-python@v5
         with:
           python-version: "3.14"
 
       - name: Install deps
+        if: github.event_name == 'pull_request'
         run: |
           pip install -r tool/requirements.txt
 
       - name: Generate diff
+        if: github.event_name == 'pull_request'
         run: |
           BASE_SHA="${{ github.event.pull_request.base.sha }}"
           HEAD_SHA="${{ github.event.pull_request.head.sha }}"
           git diff --unified=0 "$BASE_SHA" "$HEAD_SHA" > diff.patch
 
       - name: Run analyzer with diff
+        if: github.event_name == 'pull_request'
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         run: |
           python tool/main.py diff.patch > review.md
 
       - name: Comment on PR with analysis
+        if: github.event_name == 'pull_request'
         uses: peter-evans/create-or-update-comment@v4
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
