@@ -19,7 +19,7 @@ jobs:
 
       - name: Install deps
         run: |
-          pip install -r requirements.txt
+          pip install -r tool/requirements.txt
 
       - name: Generate diff
         run: |
