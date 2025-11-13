@@ -28,6 +28,8 @@ jobs:
           git diff --unified=0 "$BASE_SHA" "$HEAD_SHA" > diff.patch
 
       - name: Run analyzer with diff
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         run: |
           python tool/main.py diff.patch > review.md
 
