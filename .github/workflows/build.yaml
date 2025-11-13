@@ -2,6 +2,12 @@ name: Build
 on:
   pull_request:
     types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+  issues: write
+  pull-requests: write
+  
 jobs:
   sonarqube:
     name: SonarQube
