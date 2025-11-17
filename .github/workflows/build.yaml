@@ -1,8 +1,5 @@
 name: Build
 on:
-  push:
-    branches:
-      - main
   pull_request:
     types: [opened, synchronize, reopened]
 
@@ -32,6 +29,7 @@ jobs:
         run: |
           pip install -r tool/requirements.txt
 
+      # ---------- Generate diff ----------
       - name: Generate diff
         if: github.event_name == 'pull_request'
         run: |
@@ -39,6 +37,7 @@ jobs:
           HEAD_SHA="${{ github.event.pull_request.head.sha }}"
           git diff --unified=0 "$BASE_SHA" "$HEAD_SHA" > diff.patch
 
+      # ---------- Run LLM reviewer ----------
       - name: Run analyzer with diff
         if: github.event_name == 'pull_request'
         env:
@@ -54,23 +53,35 @@ jobs:
           issue-number: ${{ github.event.pull_request.number }}
           body-file: review.md
 
+      # ---------- SonarQube Scan ----------
       - name: SonarQube Scan
         uses: SonarSource/sonarqube-scan-action@v6
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
-      - name: Fetch SonarCloud issues for this PR
-        if: github.event_name == 'pull_request'
+      # ---------- Fetch Sonar issues ONLY from today ----------
+      - name: Fetch Sonar issues for this PR
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: |
-          curl -s -u "${{ secrets.SONAR_TOKEN }}:" \
-            "https://sonarcloud.io/api/issues/search?organization=lorenzo-cm&projectKey=lorenzo-cm_MES-UFMG&pullRequest=${{ github.event.pull_request.number }}&types=CODE_SMELL&ps=500" \
-            -o sonar_pr_${{ github.event.pull_request.number }}.json
+          PR="${{ github.event.pull_request.number }}"
+          TODAY=$(date -u +"%Y-%m-%d")
 
-          echo "SonarCloud issues saved to sonar_pr_${{ github.event.pull_request.number }}.json"
+          curl -s -u "${SONAR_TOKEN}:" \
+            "https://sonarcloud.io/api/issues/search?organization=lorenzo-cm&projectKey=lorenzo-cm_MES-UFMG&pullRequest=${PR}&types=CODE_SMELL&createdAfter=${TODAY}" \
+            > sonar_pr_${PR}.json
 
-      - name: Upload SonarCloud JSON as artifact
-        if: github.event_name == 'pull_request'
+          echo "Sonar issues saved to sonar_pr_${PR}.json"
+
+      # ---------- Build unified dataset entry ----------
+      - name: Build dataset JSON
+        run: |
+          mkdir -p dataset
+          python tool/build_log.py "$GITHUB_EVENT_PATH"
+
+      # ---------- Upload dataset entry ----------
+      - name: Upload dataset artifact
         uses: actions/upload-artifact@v4
         with:
-          name: sonar-issues-pr-${{ github.event.pull_request.number }}
-          path: sonar_pr_${{ github.event.pull_request.number }}.json
+          name: dataset-pr-${{ github.event.pull_request.number }}
+          path: dataset/pr_${{ github.event.pull_request.number }}.json
