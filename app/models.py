@@ -111,3 +111,36 @@ class Project:
 
     def __repr__(self):
         return f"Project(id={self.project_id}, name='{self.name}', tasks={len(self.tasks)})"
+
+class Project:
+    def __init__(self, project_id: int, name: str, description: str, owner: User):
+        self.project_id = project_id
+        self.name = name
+        self.description = description
+        self.owner = owner
+        self.tasks: List[Task] = []
+        self.members: List[User] = [owner]
+        self.created_at = datetime.now()
+
+    def add_task(self, task: Task):
+        self.tasks.append(task)
+
+    def add_member(self, user: User):
+        if user not in self.members:
+            self.members.append(user)
+
+    def remove_member(self, user: User):
+        if user in self.members and user != self.owner:
+            self.members.remove(user)
+
+    def get_tasks_by_status(self, status: TaskStatus):
+        return [task for task in self.tasks if task.status == status]
+
+    def get_progress(self):
+        if not self.tasks:
+            return 0.0
+        completed = len([t for t in self.tasks if t.status == TaskStatus.DONE])
+        return (completed / len(self.tasks)) * 100
+
+    def __repr__(self):
+        return f"Project(id={self.project_id}, name='{self.name}', tasks={len(self.tasks)})"
