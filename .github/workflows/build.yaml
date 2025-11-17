@@ -58,3 +58,19 @@ jobs:
         uses: SonarSource/sonarqube-scan-action@v6
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
+      - name: Fetch SonarCloud issues for this PR
+        if: github.event_name == 'pull_request'
+        run: |
+          curl -s -u "${{ secrets.SONAR_TOKEN }}:" \
+            "https://sonarcloud.io/api/issues/search?organization=lorenzo-cm&projectKey=lorenzo-cm_MES-UFMG&pullRequest=${{ github.event.pull_request.number }}&types=CODE_SMELL&ps=500" \
+            -o sonar_pr_${{ github.event.pull_request.number }}.json
+
+          echo "SonarCloud issues saved to sonar_pr_${{ github.event.pull_request.number }}.json"
+
+      - name: Upload SonarCloud JSON as artifact
+        if: github.event_name == 'pull_request'
+        uses: actions/upload-artifact@v4
+        with:
+          name: sonar-issues-pr-${{ github.event.pull_request.number }}
+          path: sonar_pr_${{ github.event.pull_request.number }}.json

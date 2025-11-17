@@ -1,0 +1,113 @@
+from datetime import datetime
+from typing import Optional, List
+from enum import Enum
+
+
+class TaskStatus(Enum):
+    TODO = "todo"
+    IN_PROGRESS = "in_progress"
+    DONE = "done"
+    CANCELLED = "cancelled"
+
+
+class TaskPriority(Enum):
+    LOW = 1
+    MEDIUM = 2
+    HIGH = 3
+    CRITICAL = 4
+
+
+class User:
+    def __init__(self, user_id: int, name: str, email: str):
+        self.user_id = user_id
+        self.name = name
+        self.email = email
+        self.created_at = datetime.now()
+        self.tasks: List['Task'] = []
+
+    def get_active_tasks(self):
+        return [task for task in self.tasks if task.status != TaskStatus.DONE]
+
+    def get_completed_tasks(self):
+        return [task for task in self.tasks if task.status == TaskStatus.DONE]
+
+    def __repr__(self):
+        return f"User(id={self.user_id}, name='{self.name}', email='{self.email}')"
+
+
+class Task:
+    def __init__(
+        self,
+        task_id: int,
+        title: str,
+        description: str,
+        assigned_to: Optional[User] = None,
+        priority: TaskPriority = TaskPriority.MEDIUM,
+    ):
+        self.task_id = task_id
+        self.title = title
+        self.description = description
+        self.assigned_to = assigned_to
+        self.priority = priority
+        self.status = TaskStatus.TODO
+        self.created_at = datetime.now()
+        self.updated_at = datetime.now()
+        self.completed_at: Optional[datetime] = None
+
+    def assign_to(self, user: User):
+        self.assigned_to = user
+        self.updated_at = datetime.now()
+        if user:
+            user.tasks.append(self)
+
+    def update_status(self, status: TaskStatus):
+        self.status = status
+        self.updated_at = datetime.now()
+        if status == TaskStatus.DONE:
+            self.completed_at = datetime.now()
+
+    def set_priority(self, priority: TaskPriority):
+        self.priority = priority
+        self.updated_at = datetime.now()
+
+    def is_overdue(self, deadline: datetime) -> bool:
+        if self.status == TaskStatus.DONE:
+            return False
+        return datetime.now() > deadline
+
+    def __repr__(self):
+        return f"Task(id={self.task_id}, title='{self.title}', status={self.status.value})"
+
+
+class Project:
+    def __init__(self, project_id: int, name: str, description: str, owner: User):
+        self.project_id = project_id
+        self.name = name
+        self.description = description
+        self.owner = owner
+        self.tasks: List[Task] = []
+        self.members: List[User] = [owner]
+        self.created_at = datetime.now()
+
+    def add_task(self, task: Task):
+        self.tasks.append(task)
+
+    def add_member(self, user: User):
+        if user not in self.members:
+            self.members.append(user)
+
+    def remove_member(self, user: User):
+        if user in self.members and user != self.owner:
+            self.members.remove(user)
+
+    def get_tasks_by_status(self, status: TaskStatus):
+        return [task for task in self.tasks if task.status == status]
+
+    def get_progress(self):
+        if not self.tasks:
+            return 0.0
+        completed = len([t for t in self.tasks if t.status == TaskStatus.DONE])
+        return (completed / len(self.tasks)) * 100
+
+    def __repr__(self):
+        return f"Project(id={self.project_id}, name='{self.name}', tasks={len(self.tasks)})"
