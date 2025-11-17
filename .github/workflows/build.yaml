@@ -59,6 +59,10 @@ jobs:
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
+      # ---------- Wait for SonarQube analysis ----------
+      - name: Wait for SonarQube analysis
+        run: sleep 30
+
       # ---------- Fetch Sonar issues ONLY from today ----------
       - name: Fetch Sonar issues for this PR
         env:
@@ -67,11 +71,31 @@ jobs:
           PR="${{ github.event.pull_request.number }}"
           echo "Fetching issues for PR $PR"
 
-          curl -s -u "${SONAR_TOKEN}:" \
-            "https://sonarcloud.io/api/issues/search?componentKeys=lorenzo-cm_MES-UFMG&pullRequest=${PR}&types=CODE_SMELL" \
-            -o sonar_pr_${PR}.json
+          # Use proper authorization header instead of basic auth
+          HTTP_CODE=$(curl -s -w "%{http_code}" \
+            -H "Authorization: Bearer ${SONAR_TOKEN}" \
+            -H "Accept: application/json" \
+            "https://sonarcloud.io/api/issues/search?componentKeys=lorenzo-cm_MES-UFMG&pullRequest=${PR}&types=CODE_SMELL&resolved=false" \
+            -o sonar_pr_${PR}.json)
 
-          echo "Saved sonar_pr_${PR}.json"
+          echo "HTTP Status Code: $HTTP_CODE"
+          
+          # Check if request was successful
+          if [ "$HTTP_CODE" != "200" ]; then
+            echo "Error: SonarCloud API returned status $HTTP_CODE"
+            cat sonar_pr_${PR}.json
+            exit 1
+          fi
+
+          # Verify JSON is not empty
+          if [ ! -s sonar_pr_${PR}.json ]; then
+            echo "Error: Empty response from SonarCloud"
+            exit 1
+          fi
+
+          echo "Successfully fetched SonarCloud issues:"
+          cat sonar_pr_${PR}.json | jq '.total'
+
 
       # ---------- Build unified dataset entry ----------
       - name: Build dataset JSON
