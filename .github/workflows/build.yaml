@@ -65,13 +65,13 @@ jobs:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: |
           PR="${{ github.event.pull_request.number }}"
-          TODAY=$(date -u +"%Y-%m-%d")
+          echo "Fetching issues for PR $PR"
 
           curl -s -u "${SONAR_TOKEN}:" \
-            "https://sonarcloud.io/api/issues/search?organization=lorenzo-cm&projectKey=lorenzo-cm_MES-UFMG&pullRequest=${PR}&types=CODE_SMELL&createdAfter=${TODAY}" \
-            > sonar_pr_${PR}.json
+            "https://sonarcloud.io/api/issues/search?componentKeys=lorenzo-cm_MES-UFMG&pullRequest=${PR}&types=CODE_SMELL" \
+            -o sonar_pr_${PR}.json
 
-          echo "Sonar issues saved to sonar_pr_${PR}.json"
+          echo "Saved sonar_pr_${PR}.json"
 
       # ---------- Build unified dataset entry ----------
       - name: Build dataset JSON
