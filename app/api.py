@@ -191,15 +191,18 @@ class ProjectAPI:
             return APIResponse.success(None, "Task added to project")
         return APIResponse.error("Project not found", 404)
 
-    def list_projects(self) -> Dict:
-        projects = self.service.get_all_projects()
-        project_list = [
-            {
-                "project_id": p.project_id,
-                "name": p.name,
-                "tasks_count": len(p.tasks),
-                "progress": p.get_progress()
-            }
-            for p in projects
-        ]
-        return APIResponse.success(project_list)
+    # TO-DO: refactor list_projects method
+
+    # def list_projects(self) -> Dict:
+    #     projects = self.service.get_all_projects()
+    #     project_list = [
+    #         {
+    #             "project_id": p.project_id,
+    #             "name": p.name,
+    #             "tasks_count": len(p.tasks),
+    #             "progress": p.get_progress()
+    #         }
+    #         for p in projects
+    #     ]
+    #     return APIResponse.success(project_list)
+
