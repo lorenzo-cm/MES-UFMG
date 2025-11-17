@@ -18,3 +18,9 @@ import matplotlib.pyplot as plt
 
 # TODO COMMENT
 # TODO COMMENT
+
+# TODO: remove this
+x = 10
+
+# TODO: this should be cleaned later
+y = x + 2
