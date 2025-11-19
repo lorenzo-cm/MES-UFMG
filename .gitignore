@@ -6,3 +6,12 @@ __pycache__
 .vscode
 .DS_Store
 .mypy_cache
+
+# Generated files
+review.md
+llm_smells.json
+diff.patch
+sonar_pr_*.json
+
+# Test outputs
+tool/examples/test_output/

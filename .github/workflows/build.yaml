@@ -7,7 +7,7 @@ permissions:
   contents: read
   issues: write
   pull-requests: write
-  
+
 jobs:
   sonarqube:
     name: SonarQube
@@ -43,7 +43,7 @@ jobs:
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         run: |
-          python tool/main.py diff.patch > review.md
+          python tool/generate_review.py diff.patch
 
       - name: Comment on PR with analysis
         if: github.event_name == 'pull_request'
@@ -79,7 +79,7 @@ jobs:
             -o sonar_pr_${PR}.json)
 
           echo "HTTP Status Code: $HTTP_CODE"
-          
+
           # Check if request was successful
           if [ "$HTTP_CODE" != "200" ]; then
             echo "Error: SonarCloud API returned status $HTTP_CODE"
@@ -95,7 +95,6 @@ jobs:
 
           echo "Successfully fetched SonarCloud issues:"
           cat sonar_pr_${PR}.json | jq '.total'
-
 
       # ---------- Build unified dataset entry ----------
       - name: Build dataset JSON

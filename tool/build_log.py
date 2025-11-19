@@ -6,9 +6,12 @@ def load_sonar(pr_number):
     path = Path(f"sonar_pr_{pr_number}.json")
     return json.loads(path.read_text()) if path.exists() else {}
 
-def load_llm():
-    path = Path("review.md")
-    return path.read_text() if path.exists() else ""
+def load_llm_smells():
+    """Load structured LLM code smells from JSON file."""
+    path = Path("llm_smells.json")
+    if path.exists():
+        return json.loads(path.read_text())
+    return []
 
 def extract_ground_truth(pr_body, labels):
     smells = []
@@ -40,7 +43,7 @@ def main():
         "pr_author": pr["user"]["login"],
         "created_at": pr["created_at"],
         "ground_truth_smells": ground_truth,
-        "llm_output": load_llm(),
+        "llm_smells": load_llm_smells(),
         "sonar_issues": load_sonar(pr_number).get("issues", [])
     }
 
