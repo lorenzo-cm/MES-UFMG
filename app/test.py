@@ -1,3 +1,4 @@
+# ...existing code...
 import numpy as np
 
 arr = np.array([1, 2, 3])
@@ -18,3 +19,8 @@ import matplotlib.pyplot as plt
 
 # TODO COMMENT
 # TODO COMMENT
+
+# DEAD CODE: The following function is never called or used
+def unused_function():
+    print("This function is not used in the script.")
+# ...existing code...
