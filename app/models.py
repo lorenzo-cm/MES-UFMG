@@ -53,6 +53,7 @@ class Task:
         self.created_at = datetime.now()
         self.updated_at = datetime.now()
         self.completed_at: Optional[datetime] = None
+        self.deadline: Optional[datetime] = None
 
     def assign_to(self, user: User):
         self.assigned_to = user
@@ -70,10 +71,18 @@ class Task:
         self.priority = priority
         self.updated_at = datetime.now()
 
-    def is_overdue(self, deadline: datetime) -> bool:
+    def set_deadline(self, deadline: datetime):
+        """Set deadline for the task"""
+        self.deadline = deadline
+        self.updated_at = datetime.now()
+
+    def is_overdue(self, deadline: Optional[datetime] = None) -> bool:
         if self.status == TaskStatus.DONE:
             return False
-        return datetime.now() > deadline
+        check_deadline = deadline if deadline else self.deadline
+        if not check_deadline:
+            return False
+        return datetime.now() > check_deadline
 
     def __repr__(self):
         return f"Task(id={self.task_id}, title='{self.title}', status={self.status.value})"

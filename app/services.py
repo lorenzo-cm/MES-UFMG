@@ -26,11 +26,89 @@ class UserService:
             return True
         return False
 
+    def count_active_users(self) -> int:
+        """Count users with at least one active task"""
+        return sum(1 for user in self.users.values() if user.get_active_tasks())
+
     def find_by_email(self, email: str) -> Optional[User]:
         for user in self.users.values():
             if user.email == email:
                 return user
         return None
+
+    # FEATURE ENVY - This method is envious of User class data
+    def generate_user_performance_summary(self, user: User) -> Dict:
+        """Generate performance summary for a user - FEATURE ENVY smell"""
+        # Uses way more User data than UserService data
+        summary = {
+            "user_id": user.user_id,
+            "user_name": user.name,
+            "user_email": user.email,
+            "member_since": user.created_at.strftime("%Y-%m-%d"),
+            "total_tasks": len(user.tasks),
+            "active_tasks": len(user.get_active_tasks()),
+            "completed_tasks": len(user.get_completed_tasks()),
+        }
+        
+        # Calculate completion rate using User's data
+        if len(user.tasks) > 0:
+            completion_rate = (len(user.get_completed_tasks()) / len(user.tasks)) * 100
+        else:
+            completion_rate = 0.0
+        summary["completion_rate"] = round(completion_rate, 2)
+        
+        # Analyze task priorities from User's tasks
+        priority_counts = {"low": 0, "medium": 0, "high": 0, "critical": 0}
+        for task in user.tasks:
+            if task.priority == TaskPriority.LOW:
+                priority_counts["low"] += 1
+            elif task.priority == TaskPriority.MEDIUM:
+                priority_counts["medium"] += 1
+            elif task.priority == TaskPriority.HIGH:
+                priority_counts["high"] += 1
+            elif task.priority == TaskPriority.CRITICAL:
+                priority_counts["critical"] += 1
+        summary["priority_distribution"] = priority_counts
+        
+        # Analyze task statuses from User's tasks
+        status_counts = {"todo": 0, "in_progress": 0, "done": 0, "cancelled": 0}
+        for task in user.tasks:
+            if task.status == TaskStatus.TODO:
+                status_counts["todo"] += 1
+            elif task.status == TaskStatus.IN_PROGRESS:
+                status_counts["in_progress"] += 1
+            elif task.status == TaskStatus.DONE:
+                status_counts["done"] += 1
+            elif task.status == TaskStatus.CANCELLED:
+                status_counts["cancelled"] += 1
+        summary["status_distribution"] = status_counts
+        
+        # Calculate average task age from User's completed tasks
+        completed_tasks = user.get_completed_tasks()
+        if completed_tasks:
+            total_days = 0
+            for task in completed_tasks:
+                if task.completed_at:
+                    days = (task.completed_at - task.created_at).days
+                    total_days += days
+            avg_completion_days = total_days / len(completed_tasks)
+            summary["avg_completion_days"] = round(avg_completion_days, 1)
+        else:
+            summary["avg_completion_days"] = 0
+        
+        # Find oldest active task from User's data
+        active_tasks = user.get_active_tasks()
+        if active_tasks:
+            oldest_task = min(active_tasks, key=lambda t: t.created_at)
+            summary["oldest_active_task"] = {
+                "id": oldest_task.task_id,
+                "title": oldest_task.title,
+                "days_old": (datetime.now() - oldest_task.created_at).days
+            }
+        else:
+            summary["oldest_active_task"] = None
+        
+        return summary
 
 
 class TaskService:
