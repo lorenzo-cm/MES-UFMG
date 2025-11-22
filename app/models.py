@@ -53,6 +53,7 @@ class Task:
         self.created_at = datetime.now()
         self.updated_at = datetime.now()
         self.completed_at: Optional[datetime] = None
+        self.tags: List[str] = []
 
     def assign_to(self, user: User):
         self.assigned_to = user
@@ -74,6 +75,22 @@ class Task:
         if self.status == TaskStatus.DONE:
             return False
         return datetime.now() > deadline
+
+    def add_tag(self, tag: str):
+        """Add a tag to the task"""
+        if tag not in self.tags:
+            self.tags.append(tag.lower())
+            self.updated_at = datetime.now()
+
+    def remove_tag(self, tag: str):
+        """Remove a tag from the task"""
+        if tag.lower() in self.tags:
+            self.tags.remove(tag.lower())
+            self.updated_at = datetime.now()
+
+    def has_tag(self, tag: str) -> bool:
+        """Check if task has a specific tag"""
+        return tag.lower() in self.tags
 
     def __repr__(self):
         return f"Task(id={self.task_id}, title='{self.title}', status={self.status.value})"
