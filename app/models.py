@@ -31,6 +31,14 @@ class User:
     def get_completed_tasks(self):
         return [task for task in self.tasks if task.status == TaskStatus.DONE]
 
+    def get_task_statistics(self):
+        """Get user task statistics"""
+        return {
+            "total": len(self.tasks),
+            "active": len(self.get_active_tasks()),
+            "completed": len(self.get_completed_tasks())
+        }
+
     def __repr__(self):
         return f"User(id={self.user_id}, name='{self.name}', email='{self.email}')"
 
