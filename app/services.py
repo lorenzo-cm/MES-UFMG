@@ -81,6 +81,10 @@ class TaskService:
     def get_tasks_by_user(self, user: User) -> List[Task]:
         return [task for task in self.tasks.values() if task.assigned_to == user]
 
+    def get_tasks_by_status(self, status: TaskStatus) -> List[Task]:
+        """Get all tasks with specific status"""
+        return [task for task in self.tasks.values() if task.status == status]
+
     def get_high_priority_tasks(self) -> List[Task]:
         return [
             task
@@ -132,3 +136,131 @@ class ProjectService:
             del self.projects[project_id]
             return True
         return False
+
+    # GOD METHOD - Does too many things
+    def generate_comprehensive_project_report(self, project_id: int) -> Dict:
+        """Generate comprehensive project report with all statistics and analysis"""
+        project = self.get_project(project_id)
+        if not project:
+            return {"error": "Project not found"}
+        
+        # Calculate basic stats
+        total_tasks = len(project.tasks)
+        completed_tasks = len([t for t in project.tasks if t.status == TaskStatus.DONE])
+        in_progress_tasks = len([t for t in project.tasks if t.status == TaskStatus.IN_PROGRESS])
+        todo_tasks = len([t for t in project.tasks if t.status == TaskStatus.TODO])
+        cancelled_tasks = len([t for t in project.tasks if t.status == TaskStatus.CANCELLED])
+        
+        # Calculate progress percentage
+        if total_tasks > 0:
+            progress = (completed_tasks / total_tasks) * 100
+        else:
+            progress = 0
+        
+        # Calculate priority distribution
+        low_priority = len([t for t in project.tasks if t.priority == TaskPriority.LOW])
+        medium_priority = len([t for t in project.tasks if t.priority == TaskPriority.MEDIUM])
+        high_priority = len([t for t in project.tasks if t.priority == TaskPriority.HIGH])
+        critical_priority = len([t for t in project.tasks if t.priority == TaskPriority.CRITICAL])
+        
+        # Find overdue tasks (assuming deadline is in task)
+        overdue_count = 0
+        for task in project.tasks:
+            if task.status != TaskStatus.DONE and hasattr(task, 'deadline'):
+                if task.deadline and datetime.now() > task.deadline:
+                    overdue_count += 1
+        
+        # Calculate member statistics
+        member_task_counts = {}
+        for member in project.members:
+            member_tasks = [t for t in project.tasks if t.assigned_to == member]
+            member_task_counts[member.user_id] = {
+                "name": member.name,
+                "total": len(member_tasks),
+                "completed": len([t for t in member_tasks if t.status == TaskStatus.DONE]),
+                "in_progress": len([t for t in member_tasks if t.status == TaskStatus.IN_PROGRESS])
+            }
+        
+        # Find most active member
+        most_active_member = None
+        max_tasks = 0
+        for member_id, stats in member_task_counts.items():
+            if stats["total"] > max_tasks:
+                max_tasks = stats["total"]
+                most_active_member = stats["name"]
+        
+        # Calculate average task completion time
+        completion_times = []
+        for task in project.tasks:
+            if task.status == TaskStatus.DONE and task.completed_at:
+                time_diff = (task.completed_at - task.created_at).days
+                completion_times.append(time_diff)
+        
+        avg_completion_time = sum(completion_times) / len(completion_times) if completion_times else 0
+        
+        # Identify bottlenecks (tasks in progress for too long)
+        bottlenecks = []
+        for task in project.tasks:
+            if task.status == TaskStatus.IN_PROGRESS:
+                days_in_progress = (datetime.now() - task.updated_at).days
+                if days_in_progress > 7:
+                    bottlenecks.append({
+                        "task_id": task.task_id,
+                        "title": task.title,
+                        "days_stuck": days_in_progress
+                    })
+        
+        # Calculate risk score
+        risk_score = 0
+        if progress < 30:
+            risk_score += 3
+        if overdue_count > total_tasks * 0.2:
+            risk_score += 2
+        if len(bottlenecks) > 3:
+            risk_score += 2
+        if critical_priority > 0 and completed_tasks == 0:
+            risk_score += 3
+        
+        # Generate recommendations
+        recommendations = []
+        if progress < 50 and (datetime.now() - project.created_at).days > 30:
+            recommendations.append("Project is behind schedule. Consider adding more resources.")
+        if overdue_count > 0:
+            recommendations.append(f"{overdue_count} overdue tasks need immediate attention.")
+        if len(bottlenecks) > 0:
+            recommendations.append(f"{len(bottlenecks)} tasks are stuck in progress. Review blockers.")
+        if critical_priority > medium_priority + low_priority:
+            recommendations.append("Too many critical tasks. Re-evaluate priorities.")
+        
+        # Build comprehensive report
+        report = {
+            "project_id": project.project_id,
+            "project_name": project.name,
+            "owner": project.owner.name,
+            "created_at": project.created_at.isoformat(),
+            "task_summary": {
+                "total": total_tasks,
+                "completed": completed_tasks,
+                "in_progress": in_progress_tasks,
+                "todo": todo_tasks,
+                "cancelled": cancelled_tasks,
+                "overdue": overdue_count
+            },
+            "progress_percentage": round(progress, 2),
+            "priority_distribution": {
+                "low": low_priority,
+                "medium": medium_priority,
+                "high": high_priority,
+                "critical": critical_priority
+            },
+            "member_statistics": member_task_counts,
+            "most_active_member": most_active_member,
+            "avg_completion_days": round(avg_completion_time, 1),
+            "bottlenecks": bottlenecks,
+            "risk_score": risk_score,
+            "risk_level": "HIGH" if risk_score >= 7 else "MEDIUM" if risk_score >= 4 else "LOW",
+            "recommendations": recommendations,
+            "report_generated_at": datetime.now().isoformat()
+        }
+        
+        return report
