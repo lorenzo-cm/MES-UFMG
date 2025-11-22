@@ -88,6 +88,20 @@ class TaskService:
             if task.priority in [TaskPriority.HIGH, TaskPriority.CRITICAL]
         ]
 
+    def export_tasks_to_dict(self) -> List[Dict]:
+        """Export all tasks to dictionary format"""
+        return [
+            {
+                "id": task.task_id,
+                "title": task.title,
+                "description": task.description,
+                "status": task.status.value,
+                "priority": task.priority.value,
+                "assigned_to": task.assigned_to.user_id if task.assigned_to else None
+            }
+            for task in self.tasks.values()
+        ]
+
 
 class ProjectService:
     def __init__(self):

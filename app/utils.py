@@ -81,3 +81,56 @@ def is_valid_priority(priority: int) -> bool:
 def format_user_display_name(name: str, email: str) -> str:
     """Format user display name"""
     return f"{name} ({email})"
+
+
+# DUPLICATED CODE - Similar validation functions
+def validate_task_title(title: str) -> bool:
+    """Validate task title"""
+    if not title:
+        return False
+    if len(title.strip()) == 0:
+        return False
+    if len(title) < 3:
+        return False
+    if len(title) > 200:
+        return False
+    return True
+
+
+def validate_task_description(description: str) -> bool:
+    """Validate task description"""
+    if not description:
+        return False
+    if len(description.strip()) == 0:
+        return False
+    if len(description) < 3:
+        return False
+    if len(description) > 2000:
+        return False
+    return True
+
+
+def validate_project_name(name: str) -> bool:
+    """Validate project name"""
+    if not name:
+        return False
+    if len(name.strip()) == 0:
+        return False
+    if len(name) < 3:
+        return False
+    if len(name) > 100:
+        return False
+    return True
+
+
+def validate_user_name(name: str) -> bool:
+    """Validate user name"""
+    if not name:
+        return False
+    if len(name.strip()) == 0:
+        return False
+    if len(name) < 3:
+        return False
+    if len(name) > 100:
+        return False
+    return True
