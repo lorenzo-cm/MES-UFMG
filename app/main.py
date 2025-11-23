@@ -1,7 +1,8 @@
 from services import UserService, TaskService, ProjectService
-from api import UserAPI, TaskAPI, ProjectAPI
+from api import UserAPI, TaskAPI, ProjectAPI, NotificationAPI
 from models import TaskStatus, TaskPriority
 from utils import generate_task_summary, format_datetime
+from notification_service import NotificationService
 import json
 
 
@@ -10,17 +11,19 @@ def initialize_services():
     user_service = UserService()
     task_service = TaskService()
     project_service = ProjectService()
+    notification_service = NotificationService()
     
-    return user_service, task_service, project_service
+    return user_service, task_service, project_service, notification_service
 
 
-def initialize_apis(user_service, task_service, project_service):
+def initialize_apis(user_service, task_service, project_service, notification_service):
     """Initialize all API handlers"""
     user_api = UserAPI(user_service)
-    task_api = TaskAPI(task_service, user_service)
+    task_api = TaskAPI(task_service, user_service, notification_service)
     project_api = ProjectAPI(project_service, user_service)
+    notification_api = NotificationAPI(notification_service)
     
-    return user_api, task_api, project_api
+    return user_api, task_api, project_api, notification_api
 
 
 def demo_workflow():
@@ -28,9 +31,9 @@ def demo_workflow():
     print("=== Task Management System Demo ===\n")
     
     # Initialize services and APIs
-    user_service, task_service, project_service = initialize_services()
-    user_api, task_api, project_api = initialize_apis(
-        user_service, task_service, project_service
+    user_service, task_service, project_service, notification_service = initialize_services()
+    user_api, task_api, project_api, notification_api = initialize_apis(
+        user_service, task_service, project_service, notification_service
     )
     
     # Create users
@@ -108,6 +111,11 @@ def demo_workflow():
     high_priority = task_service.get_high_priority_tasks()
     for task in high_priority:
         print(f"  - {task.title} (Priority: {task.priority.value})")
+    
+    # Show notification log
+    print("\nNotification log:")
+    notification_log = notification_api.get_notification_log()
+    print(json.dumps(notification_log, indent=2))
 
 
 def main():
