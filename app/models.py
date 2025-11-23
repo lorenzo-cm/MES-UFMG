@@ -109,5 +109,46 @@ class Project:
         completed = len([t for t in self.tasks if t.status == TaskStatus.DONE])
         return (completed / len(self.tasks)) * 100
 
+    def rebalance_member_workload(self, max_tasks_per_member: int) -> dict:
+        overloaded = []
+        underloaded = []
+        for m in self.members:
+            user_tasks_in_project = [t for t in m.tasks if t in self.tasks and t.status != TaskStatus.DONE]
+            count = len(user_tasks_in_project)
+            if count > max_tasks_per_member:
+                overloaded.append((m, user_tasks_in_project))
+            elif count < max_tasks_per_member:
+                underloaded.append((m, user_tasks_in_project))
+        reassignments = []
+        total_moved = 0
+        while overloaded and underloaded:
+            source, source_tasks = overloaded[0]
+            target, target_tasks = underloaded[0]
+            if not source_tasks:
+                overloaded.pop(0)
+                continue
+            task_to_move = source_tasks.pop(0)
+            if task_to_move in source.tasks:
+                try:
+                    source.tasks.remove(task_to_move)
+                except ValueError:
+                    pass
+            task_to_move.assigned_to = target
+            if task_to_move not in target.tasks:
+                target.tasks.append(task_to_move)
+            reassignments.append({
+                "task_id": getattr(task_to_move, "task_id", None),
+                "from": getattr(source, "user_id", None),
+                "to": getattr(target, "user_id", None)
+            })
+            total_moved += 1
+            if len(source_tasks) <= max_tasks_per_member:
+                overloaded.pop(0)
+            if len(target_tasks) + 1 >= max_tasks_per_member:
+                underloaded.pop(0)
+            else:
+                target_tasks.append(task_to_move)
+        return {"moved": total_moved, "reassignments": reassignments}
+
     def __repr__(self):
         return f"Project(id={self.project_id}, name='{self.name}', tasks={len(self.tasks)})"
