@@ -116,7 +116,8 @@ class TaskAPI:
             "description": task.description,
             "status": task.status.value,
             "priority": task.priority.value,
-            "assigned_to": task.assigned_to.user_id if task.assigned_to else None
+            "assigned_to": task.assigned_to.user_id if task.assigned_to else None,
+            "tags": task.tags
         })
 
     def update_status(self, task_id: int, status: str) -> Dict:
@@ -136,11 +137,52 @@ class TaskAPI:
                 "task_id": t.task_id,
                 "title": t.title,
                 "status": t.status.value,
-                "priority": t.priority.value
+                "priority": t.priority.value,
+                "tags": t.tags
             }
             for t in tasks
         ]
         return APIResponse.success(task_list)
+
+    def add_tag(self, task_id: int, tag: str) -> Dict:
+        if not tag:
+            return APIResponse.error("Tag is required")
+        
+        if self.service.add_tag_to_task(task_id, tag):
+            return APIResponse.success(None, "Tag added successfully")
+        return APIResponse.error("Task not found", 404)
+
+    def remove_tag(self, task_id: int, tag: str) -> Dict:
+        if not tag:
+            return APIResponse.error("Tag is required")
+        
+        if self.service.remove_tag_from_task(task_id, tag):
+            return APIResponse.success(None, "Tag removed successfully")
+        return APIResponse.error("Task not found", 404)
+
+    def get_task_tags(self, task_id: int) -> Dict:
+        tags = self.service.get_task_tags(task_id)
+        if tags is None:
+            return APIResponse.error("Task not found", 404)
+        return APIResponse.success({"tags": tags})
+
+    def get_tasks_by_tag(self, tag: str) -> Dict:
+        tasks = self.service.get_tasks_with_tag(tag)
+        task_list = [
+            {
+                "task_id": t.task_id,
+                "title": t.title,
+                "status": t.status.value,
+                "priority": t.priority.value,
+                "tags": t.tags
+            }
+            for t in tasks
+        ]
+        return APIResponse.success(task_list)
+
+    def get_all_tags(self) -> Dict:
+        tags = self.service.get_all_tags()
+        return APIResponse.success({"tags": tags})
 
 
 class ProjectAPI:
