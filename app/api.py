@@ -2,6 +2,7 @@ from typing import Dict, List, Optional
 from services import UserService, TaskService, ProjectService
 from models import TaskStatus, TaskPriority
 from utils import validate_email, sanitize_string
+from export import do_stuff, helper, exportar_dados
 import json
 
 
@@ -203,3 +204,27 @@ class ProjectAPI:
             for p in projects
         ]
         return APIResponse.success(project_list)
+
+
+class ExportAPI:
+    def __init__(self, us: UserService, ts: TaskService, ps: ProjectService):
+        self.us = us
+        self.ts = ts
+        self.ps = ps
+
+    def get_json(self) -> Dict:
+        """Get export data as JSON"""
+        x = do_stuff(self.us, self.ts, self.ps)
+        return APIResponse.success(x, "Export data retrieved")
+
+    def download(self, fn: str = "export.json") -> Dict:
+        """Download export file"""
+        result = exportar_dados(self.us, self.ts, self.ps, fn)
+        if result:
+            return APIResponse.success({"filename": result}, "File exported successfully")
+        return APIResponse.error("Export failed", 500)
+
+    def get_string(self) -> Dict:
+        """Get export as string"""
+        s = helper(self.us, self.ts, self.ps)
+        return APIResponse.success({"json_string": s}, "Export string generated")
