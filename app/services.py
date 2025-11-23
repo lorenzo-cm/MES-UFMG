@@ -132,3 +132,48 @@ class ProjectService:
             del self.projects[project_id]
             return True
         return False
+
+    def configure_project_release(
+        self,
+        project_id: int,
+        release_name: str,
+        version: str,
+        start_date: datetime,
+        end_date: datetime,
+        release_manager: User,
+        qa_lead: User,
+        docs_owner: User,
+        notify_emails: List[str],
+        deploy_environments: List[str],
+        auto_deploy: bool,
+        run_migrations: bool,
+        downtime_window_minutes: int,
+        rollback_strategy: str,
+        monitoring_endpoints: List[str],
+        tags: List[str],
+    ) -> bool:
+        
+        project = self.get_project(project_id)
+        if not project:
+            return False
+
+        project.release_config = {
+            "release_name": release_name,
+            "version": version,
+            "start_date": start_date,
+            "end_date": end_date,
+            "release_manager_id": getattr(release_manager, "id", None),
+            "qa_lead_id": getattr(qa_lead, "id", None),
+            "docs_owner_id": getattr(docs_owner, "id", None),
+            "notify_emails": notify_emails,
+            "deploy_environments": deploy_environments,
+            "auto_deploy": auto_deploy,
+            "run_migrations": run_migrations,
+            "downtime_window_minutes": downtime_window_minutes,
+            "rollback_strategy": rollback_strategy,
+            "monitoring_endpoints": monitoring_endpoints,
+            "tags": tags,
+        }
+
+        return True
+
