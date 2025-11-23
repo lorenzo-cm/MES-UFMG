@@ -132,3 +132,45 @@ class ProjectService:
             del self.projects[project_id]
             return True
         return False
+
+    def transfer_project_ownership(self, project_id: int, new_owner: User) -> bool:
+        project = self.get_project(project_id)
+        if not project:
+            return False
+        project.owner = new_owner
+        if project_id in self.projects:
+            self.projects[project_id] = project
+            return True
+        return False
+
+    def duplicate_project(self, project_id: int, owner: User) -> Optional[Project]:
+        original = self.get_project(project_id)
+        if not original:
+            return None
+        copied = Project(self.next_id, getattr(original, "name", "") + " (copy)", getattr(original, "description", ""), owner)
+        self.projects[self.next_id] = copied
+        self.next_id += 1
+        return copied
+
+    def archive_projects_by_owner(self, owner: User) -> int:
+        to_delete = []
+        for pid, proj in self.projects.items():
+            if getattr(proj, "owner", None) == owner:
+                to_delete.append(pid)
+        count = 0
+        for pid in to_delete:
+            if pid in self.projects:
+                del self.projects[pid]
+                count += 1
+        return count
+
+    def remove_project_member(self, project_id: int, user: User) -> bool:
+        project = self.get_project(project_id)
+        if not project:
+            return False
+        members = getattr(project, "members", [])
+        if user in members:
+            members.remove(user)
+            project.members = members
+            return True
+        return False
