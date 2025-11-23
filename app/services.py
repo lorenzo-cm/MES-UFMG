@@ -1,7 +1,5 @@
 from typing import List, Optional, Dict
 from models import User, Task, Project, TaskStatus, TaskPriority
-from datetime import datetime
-
 
 class UserService:
     def __init__(self):
@@ -132,3 +130,28 @@ class ProjectService:
             del self.projects[project_id]
             return True
         return False
+
+
+class DashboardReport:
+    def __init__(self, task_service: TaskService, user_service: UserService, project_service: ProjectService):
+        self.task_service = task_service
+        self.user_service = user_service
+        self.project_service = project_service
+
+    def get_task(self, task_id: int):
+        return self.task_service.get_task(task_id)
+
+    def get_user(self, user_id: int):
+        return self.user_service.get_user(user_id)
+
+    def get_project(self, project_id: int):
+        return self.project_service.get_project(project_id)
+
+    def get_all_tasks(self):
+        return self.task_service.get_all_tasks()
+
+    def get_all_users(self):
+        return self.user_service.get_all_users()
+
+    def get_all_projects(self):
+        return self.project_service.get_all_projects()
