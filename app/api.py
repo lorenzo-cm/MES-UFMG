@@ -75,6 +75,48 @@ class UserAPI:
             return APIResponse.success(None, "User deleted successfully")
         return APIResponse.error("User not found", 404)
 
+    def get_user_performance_report(self, user_id: int) -> Dict:
+        """Generate user performance report"""
+        user = self.service.get_user(user_id)
+        if not user:
+            return APIResponse.error("User not found", 404)
+        
+        total_tasks = len(user.tasks)
+        completed_tasks = len(user.get_completed_tasks())
+        active_tasks = len(user.get_active_tasks())
+        
+        performance_score = 0
+        if total_tasks > 0:
+            performance_score = (completed_tasks / total_tasks) * 100
+        
+        user_email_domain = user.email.split('@')[1] if '@' in user.email else ''
+        user_name_length = len(user.name)
+        user_email_length = len(user.email)
+        
+        high_priority_tasks = sum(1 for t in user.tasks if t.priority.value >= 3)
+        low_priority_tasks = sum(1 for t in user.tasks if t.priority.value < 3)
+        
+        avg_task_duration = 0
+        if user.get_completed_tasks():
+            total_duration = sum((t.updated_at - t.created_at).days for t in user.get_completed_tasks())
+            avg_task_duration = total_duration / len(user.get_completed_tasks())
+        
+        return APIResponse.success({
+            "user_id": user.user_id,
+            "user_name": user.name,
+            "user_email": user.email,
+            "email_domain": user_email_domain,
+            "name_length": user_name_length,
+            "email_length": user_email_length,
+            "total_tasks": total_tasks,
+            "completed": completed_tasks,
+            "active": active_tasks,
+            "performance_score": round(performance_score, 2),
+            "high_priority_count": high_priority_tasks,
+            "low_priority_count": low_priority_tasks,
+            "avg_task_duration_days": round(avg_task_duration, 2)
+        })
+
 
 class TaskAPI:
     def __init__(self, task_service: TaskService, user_service: UserService):
