@@ -81,3 +81,36 @@ def is_valid_priority(priority: int) -> bool:
 def format_user_display_name(name: str, email: str) -> str:
     """Format user display name"""
     return f"{name} ({email})"
+
+def validate_password(password: str) -> bool:
+    """Validate password strength"""
+    if len(password) < 8:
+        return False
+    if not any(c.isupper() for c in password):
+        return False
+    if not any(c.isdigit() for c in password):
+        return False
+    return True
+
+
+def generate_task_report(user_id: int, project_id: int, status_filter: str, priority_filter: int, start_date: str, end_date: str, include_archived: bool, sort_by: str) -> dict:
+    """Generate comprehensive task report with multiple filters"""
+    report = {
+        "user_id": user_id,
+        "project_id": project_id,
+        "filters": {
+            "status": status_filter,
+            "priority": priority_filter,
+            "start_date": start_date,
+            "end_date": end_date,
+            "include_archived": include_archived,
+            "sort_by": sort_by
+        },
+        "generated_at": format_datetime(datetime.now())
+    }
+    return report
+
+
+def format_date_range(start: datetime, end: datetime) -> str:
+    """Format date range for display"""
+    return f"{start.strftime('%Y-%m-%d')} to {end.strftime('%Y-%m-%d')}"
