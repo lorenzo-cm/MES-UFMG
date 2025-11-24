@@ -203,3 +203,29 @@ class ProjectAPI:
             for p in projects
         ]
         return APIResponse.success(project_list)
+
+    def create_detailed_task(
+        self,
+        title: str,
+        description: str,
+        priority: int,
+        assigned_to_id: int,
+        project_id: int,
+        deadline_days: int,
+        tags: str,
+        estimated_hours: float,
+        dependencies: str,
+        attachments: str
+    ) -> Dict:
+        return APIResponse.success({
+            "title": title,
+            "description": description,
+            "priority": priority,
+            "assigned_to_id": assigned_to_id,
+            "project_id": project_id,
+            "deadline_days": deadline_days,
+            "tags": tags,
+            "estimated_hours": estimated_hours,
+            "dependencies": dependencies,
+            "attachments": attachments
+        }, "Detailed task created")
