@@ -81,3 +81,12 @@ def is_valid_priority(priority: int) -> bool:
 def format_user_display_name(name: str, email: str) -> str:
     """Format user display name"""
     return f"{name} ({email})"
+
+
+def is_numeric_string(value: str) -> bool:
+    """Check if string represents a valid number - clean function"""
+    try:
+        float(value)
+        return True
+    except ValueError:
+        return False
