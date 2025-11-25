@@ -2,6 +2,7 @@ from typing import Dict, List, Optional
 from services import UserService, TaskService, ProjectService
 from models import TaskStatus, TaskPriority
 from utils import validate_email, sanitize_string
+from datetime import datetime
 import json
 
 
@@ -203,3 +204,90 @@ class ProjectAPI:
             for p in projects
         ]
         return APIResponse.success(project_list)
+
+    def orchestrate_project_setup(
+        self,
+        name: str,
+        description: str,
+        owner_id: int,
+        member_ids: List[int],
+        initial_tasks: List[Dict],
+        default_priority: int,
+        start_date_str: str,
+        due_date_str: str,
+        auto_assign: bool,
+        notify: bool,
+        export_format: str,
+        task_service: TaskService
+    ) -> Dict:
+        if not name:
+            return APIResponse.error("Project name required")
+        owner = self.user_service.get_user(owner_id)
+        if not owner:
+            return APIResponse.error("Owner not found", 404)
+        name = sanitize_string(name)
+        description = sanitize_string(description)
+        try:
+            start_date = datetime.fromisoformat(start_date_str) if start_date_str else None
+        except Exception:
+            start_date = None
+        try:
+            due_date = datetime.fromisoformat(due_date_str) if due_date_str else None
+        except Exception:
+            due_date = None
+        project = self.service.create_project(name, description, owner)
+        added_members = []
+        for mid in member_ids:
+            user = self.user_service.get_user(mid)
+            if user:
+                self.service.add_member_to_project(project.project_id, user)
+                added_members.append(user.user_id)
+        created_tasks = []
+        for t in initial_tasks:
+            title = sanitize_string(t.get("title", "")) or "untitled"
+            desc = sanitize_string(t.get("description", "")) or ""
+            assignee = None
+            aid = t.get("assignee_id")
+            if aid:
+                assignee = self.user_service.get_user(aid)
+            try:
+                prio = TaskPriority(t.get("priority", default_priority))
+            except Exception:
+                prio = TaskPriority(default_priority)
+            task = task_service.create_task(title, desc, assignee, prio)
+            self.service.add_task_to_project(project.project_id, task)
+            if auto_assign and assignee:
+                try:
+                    task.assign_to(assignee)
+                except Exception:
+                    pass
+            created_tasks.append({
+                "task_id": getattr(task, "task_id", None),
+                "title": getattr(task, "title", "")
+            })
+        summary = {
+            "project_id": project.project_id,
+            "name": project.name,
+            "owner_id": owner.user_id,
+            "members_added": added_members,
+            "created_tasks": created_tasks,
+            "start_date": start_date_str,
+            "due_date": due_date_str,
+            "auto_assign": auto_assign,
+            "notified": notify,
+        }
+        if notify:
+            notifications = []
+            for uid in added_members:
+                u = self.user_service.get_user(uid)
+                if u and getattr(u, "email", None):
+                    notifications.append({"user_id": uid, "email": u.email, "status": "queued"})
+            summary["notifications"] = notifications
+        exported = None
+        if export_format == "json":
+            exported = json.dumps(summary)
+        elif export_format == "dict":
+            exported = summary
+        else:
+            exported = str(summary)
+        return APIResponse.success(exported, "Orchestration completed")
