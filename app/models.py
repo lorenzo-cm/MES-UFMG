@@ -53,6 +53,7 @@ class Task:
         self.created_at = datetime.now()
         self.updated_at = datetime.now()
         self.completed_at: Optional[datetime] = None
+        self.tags: List[str] = []
 
     def assign_to(self, user: User):
         self.assigned_to = user
@@ -77,6 +78,79 @@ class Task:
 
     def __repr__(self):
         return f"Task(id={self.task_id}, title='{self.title}', status={self.status.value})"
+
+
+class TagManager:
+    def __init__(self):
+        self.all_tags: List[str] = []
+
+    def add_tag_to_task(self, task: Task, tag: str):
+        if tag not in task.tags:
+            task.tags.append(tag)
+            task.updated_at = datetime.now()
+        if tag not in self.all_tags:
+            self.all_tags.append(tag)
+
+    def infer_priority_tags(self, task: Task):
+        if task.priority == TaskPriority.HIGH:
+            self.add_tag_to_task(task, "high_priority")
+        elif task.priority == TaskPriority.CRITICAL:
+            self.add_tag_to_task(task, "critical")
+        elif task.priority == TaskPriority.MEDIUM:
+            self.add_tag_to_task(task, "medium_priority")
+        elif task.priority == TaskPriority.LOW:
+            self.add_tag_to_task(task, "low_priority")
+        else:
+            self.add_tag_to_task(task, "unknown_priority")
+
+    def infer_status_tags(self, task: Task):
+        if task.status == TaskStatus.TODO:
+            self.add_tag_to_task(task, "todo")
+        elif task.status == TaskStatus.IN_PROGRESS:
+            self.add_tag_to_task(task, "in_progress")
+        elif task.status == TaskStatus.DONE:
+            self.add_tag_to_task(task, "done")
+        elif task.status == TaskStatus.CANCELLED:
+            self.add_tag_to_task(task, "cancelled")
+        else:
+            self.add_tag_to_task(task, "unknown_status")
+
+    def remove_tag_from_task(self, task: Task, tag: str):
+        if tag in task.tags:
+            task.tags.remove(tag)
+            task.updated_at = datetime.now()
+
+    def get_task_tags(self, task: Task) -> List[str]:
+        return task.tags
+
+    def has_tag(self, task: Task, tag: str) -> bool:
+        return tag in task.tags
+
+    def get_tasks_with_tag(self, tasks: List[Task], tag: str) -> List[Task]:
+        return [task for task in tasks if tag in task.tags]
+
+    def get_all_tags(self) -> List[str]:
+        return self.all_tags
+
+    def get_tasks_by_tag_and_status(self, tasks: List[Task], tag: str, status: TaskStatus) -> List[Task]:
+        return [task for task in tasks if tag in task.tags and task.status == status]
+
+    def get_tasks_by_tag_and_priority(self, tasks: List[Task], tag: str, priority: TaskPriority) -> List[Task]:
+        return [task for task in tasks if tag in task.tags and task.priority == priority]
+
+    def get_tasks_by_tag_and_assignee(self, tasks: List[Task], tag: str, user: User) -> List[Task]:
+        return [task for task in tasks if tag in task.tags and task.assigned_to == user]
+
+    def count_tasks_with_tag(self, tasks: List[Task], tag: str) -> int:
+        return len([task for task in tasks if tag in task.tags])
+
+    def get_most_used_tags(self, tasks: List[Task], limit: int = 5) -> List[str]:
+        tag_counts = {}
+        for task in tasks:
+            for tag in task.tags:
+                tag_counts[tag] = tag_counts.get(tag, 0) + 1
+        sorted_tags = sorted(tag_counts.items(), key=lambda x: x[1], reverse=True)
+        return [tag for tag, count in sorted_tags[:limit]]
 
 
 class Project:

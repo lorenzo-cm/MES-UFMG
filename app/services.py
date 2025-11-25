@@ -1,6 +1,5 @@
 from typing import List, Optional, Dict
-from models import User, Task, Project, TaskStatus, TaskPriority
-from datetime import datetime
+from models import User, Task, Project, TaskStatus, TaskPriority, TagManager
 
 
 class UserService:
@@ -37,6 +36,7 @@ class TaskService:
     def __init__(self):
         self.tasks: Dict[int, Task] = {}
         self.next_id = 1
+        self.tag_manager = TagManager()
 
     def create_task(
         self,
@@ -87,6 +87,32 @@ class TaskService:
             for task in self.tasks.values()
             if task.priority in [TaskPriority.HIGH, TaskPriority.CRITICAL]
         ]
+
+    def add_tag_to_task(self, task_id: int, tag: str) -> bool:
+        task = self.get_task(task_id)
+        if task:
+            self.tag_manager.add_tag_to_task(task, tag)
+            return True
+        return False
+
+    def remove_tag_from_task(self, task_id: int, tag: str) -> bool:
+        task = self.get_task(task_id)
+        if task:
+            self.tag_manager.remove_tag_from_task(task, tag)
+            return True
+        return False
+
+    def get_task_tags(self, task_id: int) -> Optional[List[str]]:
+        task = self.get_task(task_id)
+        if task:
+            return self.tag_manager.get_task_tags(task)
+        return None
+
+    def get_tasks_with_tag(self, tag: str) -> List[Task]:
+        return self.tag_manager.get_tasks_with_tag(list(self.tasks.values()), tag)
+
+    def get_all_tags(self) -> List[str]:
+        return self.tag_manager.get_all_tags()
 
 
 class ProjectService:
