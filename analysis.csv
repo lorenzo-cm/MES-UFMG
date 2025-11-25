@@ -1,16 +1,16 @@
 smell_principal,llm_detectou,sonarqube_detectou,smells_adicionais_llm,smells_adicionais_sonarqube
 Long parameter list,1,1,1,0
-Long parameter list,1,0,2,0
+Long parameter list,1,0,1,0
 Long parameter list,1,1,2,3
 Código duplicado,0,0,4,0
 Código duplicado,1,0,1,0
 Código duplicado,1,0,2,0
 God Method,1,1,2,1
-God Method,1,1,2,1
+God Method,1,1,4,1
 God Method,1,1,4,2
 Complexidade Ciclomática,1,1,5,0
-Complexidade Ciclomática,1,1,2,0
+Complexidade Ciclomática,1,1,3,0
 Complexidade Ciclomática,1,1,2,0
 Feature Envy,0,0,4,1
-Feature Envy,1,0,3,1
+Feature Envy,0,0,4,1
 Feature Envy,0,0,5,0
