@@ -78,6 +78,56 @@ def is_valid_priority(priority: int) -> bool:
     return priority in [1, 2, 3, 4]
 
 
+def format_date_range(start_date: datetime, end_date: datetime) -> str:
+    """Format date range for display"""
+    start_str = start_date.strftime("%Y-%m-%d")
+    end_str = end_date.strftime("%Y-%m-%d")
+    days_diff = (end_date - start_date).days
+    return f"{start_str} to {end_str} ({days_diff} days)"
+
+
 def format_user_display_name(name: str, email: str) -> str:
     """Format user display name"""
     return f"{name} ({email})"
+
+
+def validate_project_title(title: str) -> bool:
+    """Validate project title"""
+    if not title:
+        return False
+    if len(title) < 3:
+        return False
+    if len(title) > 150:
+        return False
+    title = title.strip()
+    if not title:
+        return False
+    return True
+
+
+def validate_task_name(name: str) -> bool:
+    """Validate task name"""
+    if not name:
+        return False
+    if len(name) < 3:
+        return False
+    if len(name) > 150:
+        return False
+    name = name.strip()
+    if not name:
+        return False
+    return True
+
+
+def validate_user_fullname(fullname: str) -> bool:
+    """Validate user fullname"""
+    if not fullname:
+        return False
+    if len(fullname) < 3:
+        return False
+    if len(fullname) > 150:
+        return False
+    fullname = fullname.strip()
+    if not fullname:
+        return False
+    return True
