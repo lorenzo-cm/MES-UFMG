@@ -75,6 +75,43 @@ class UserAPI:
             return APIResponse.success(None, "User deleted successfully")
         return APIResponse.error("User not found", 404)
 
+    def create_comprehensive_task(
+        self,
+        title: str,
+        description: str,
+        priority: int,
+        assigned_to_id: int,
+        project_id: int,
+        deadline_date: str,
+        estimated_hours: float,
+        tags: str,
+        category: str,
+        dependencies: str,
+        attachments: str,
+        notes: str,
+        status: str,
+        created_by: int,
+        approval_required: bool
+    ) -> Dict:
+        """Create comprehensive task with detailed information"""
+        return APIResponse.success({
+            "title": title,
+            "description": description,
+            "priority": priority,
+            "assigned_to_id": assigned_to_id,
+            "project_id": project_id,
+            "deadline_date": deadline_date,
+            "estimated_hours": estimated_hours,
+            "tags": tags,
+            "category": category,
+            "dependencies": dependencies,
+            "attachments": attachments,
+            "notes": notes,
+            "status": status,
+            "created_by": created_by,
+            "approval_required": approval_required
+        }, "Comprehensive task created")
+
 
 class TaskAPI:
     def __init__(self, task_service: TaskService, user_service: UserService):
