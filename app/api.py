@@ -3,6 +3,7 @@ from services import UserService, TaskService, ProjectService
 from models import TaskStatus, TaskPriority
 from utils import validate_email, sanitize_string
 import json
+from datetime import datetime
 
 
 class APIResponse:
@@ -203,3 +204,120 @@ class ProjectAPI:
             for p in projects
         ]
         return APIResponse.success(project_list)
+
+    def generate_project_report(self, project_id: int) -> Dict:
+        """Generate comprehensive project report"""
+        project = self.service.get_project(project_id)
+        if not project:
+            return APIResponse.error("Project not found", 404)
+        
+        total_tasks = len(project.tasks)
+        if total_tasks == 0:
+            return APIResponse.success({"message": "No tasks in project"})
+        
+        todo_count = 0
+        in_progress_count = 0
+        done_count = 0
+        cancelled_count = 0
+        
+        for task in project.tasks:
+            if task.status == TaskStatus.TODO:
+                todo_count += 1
+            elif task.status == TaskStatus.IN_PROGRESS:
+                in_progress_count += 1
+            elif task.status == TaskStatus.DONE:
+                done_count += 1
+            elif task.status == TaskStatus.CANCELLED:
+                cancelled_count += 1
+        
+        completion_rate = (done_count / total_tasks) * 100 if total_tasks > 0 else 0
+        
+        low_priority = 0
+        medium_priority = 0
+        high_priority = 0
+        critical_priority = 0
+        
+        for task in project.tasks:
+            if task.priority == TaskPriority.LOW:
+                low_priority += 1
+            elif task.priority == TaskPriority.MEDIUM:
+                medium_priority += 1
+            elif task.priority == TaskPriority.HIGH:
+                high_priority += 1
+            elif task.priority == TaskPriority.CRITICAL:
+                critical_priority += 1
+        
+        active_members = set()
+        for task in project.tasks:
+            if task.assigned_to:
+                active_members.add(task.assigned_to.user_id)
+        
+        member_workload = {}
+        for member in project.members:
+            member_tasks = [t for t in project.tasks if t.assigned_to and t.assigned_to.user_id == member.user_id]
+            member_workload[member.name] = {
+                "total": len(member_tasks),
+                "done": len([t for t in member_tasks if t.status == TaskStatus.DONE]),
+                "in_progress": len([t for t in member_tasks if t.status == TaskStatus.IN_PROGRESS])
+            }
+        
+        overdue_tasks = []
+        now = datetime.now()
+        for task in project.tasks:
+            if task.status != TaskStatus.DONE and task.status != TaskStatus.CANCELLED:
+                days_open = (now - task.created_at).days
+                if days_open > 30:
+                    overdue_tasks.append({
+                        "task_id": task.task_id,
+                        "title": task.title,
+                        "days_open": days_open,
+                        "assigned_to": task.assigned_to.name if task.assigned_to else "Unassigned"
+                    })
+        
+        recent_activity = []
+        sorted_tasks = sorted(project.tasks, key=lambda t: t.updated_at, reverse=True)
+        for task in sorted_tasks[:5]:
+            recent_activity.append({
+                "task_id": task.task_id,
+                "title": task.title,
+                "status": task.status.value,
+                "updated_at": task.updated_at.isoformat()
+            })
+        
+        high_priority_pending = [t for t in project.tasks if t.priority == TaskPriority.CRITICAL and t.status != TaskStatus.DONE]
+        
+        recommendations = []
+        if completion_rate < 30:
+            recommendations.append("Project completion rate is low. Consider reviewing task assignments.")
+        if len(overdue_tasks) > 5:
+            recommendations.append(f"There are {len(overdue_tasks)} overdue tasks. Prioritize completion.")
+        if len(high_priority_pending) > 0:
+            recommendations.append(f"{len(high_priority_pending)} critical priority tasks are pending.")
+        if len(active_members) < len(project.members) / 2:
+            recommendations.append("Less than half of members have assigned tasks.")
+        
+        return APIResponse.success({
+            "project_id": project.project_id,
+            "project_name": project.name,
+            "total_tasks": total_tasks,
+            "status_distribution": {
+                "todo": todo_count,
+                "in_progress": in_progress_count,
+                "done": done_count,
+                "cancelled": cancelled_count
+            },
+            "completion_rate": round(completion_rate, 2),
+            "priority_distribution": {
+                "low": low_priority,
+                "medium": medium_priority,
+                "high": high_priority,
+                "critical": critical_priority
+            },
+            "member_count": len(project.members),
+            "active_members": len(active_members),
+            "member_workload": member_workload,
+            "overdue_tasks": overdue_tasks,
+            "recent_activity": recent_activity,
+            "recommendations": recommendations,
+            "generated_at": now.isoformat()
+        })
