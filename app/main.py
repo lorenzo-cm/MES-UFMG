@@ -1,7 +1,6 @@
-from services import UserService, TaskService, ProjectService
-from api import UserAPI, TaskAPI, ProjectAPI
-from models import TaskStatus, TaskPriority
-from utils import generate_task_summary, format_datetime
+from services import UserService, TaskService, ProjectService, DashboardReport
+from api import UserAPI, TaskAPI, ProjectAPI, DashboardAPI
+from utils import generate_task_summary
 import json
 
 
@@ -19,8 +18,10 @@ def initialize_apis(user_service, task_service, project_service):
     user_api = UserAPI(user_service)
     task_api = TaskAPI(task_service, user_service)
     project_api = ProjectAPI(project_service, user_service)
+    dashboard_report = DashboardReport(task_service, user_service, project_service)
+    dashboard_api = DashboardAPI(dashboard_report)
     
-    return user_api, task_api, project_api
+    return user_api, task_api, project_api, dashboard_api
 
 
 def demo_workflow():
@@ -29,7 +30,7 @@ def demo_workflow():
     
     # Initialize services and APIs
     user_service, task_service, project_service = initialize_services()
-    user_api, task_api, project_api = initialize_apis(
+    user_api, task_api, project_api, dashboard_api = initialize_apis(
         user_service, task_service, project_service
     )
     
@@ -108,6 +109,11 @@ def demo_workflow():
     high_priority = task_service.get_high_priority_tasks()
     for task in high_priority:
         print(f"  - {task.title} (Priority: {task.priority.value})")
+    
+    # Get dashboard report
+    print("\nDashboard report:")
+    dashboard_response = dashboard_api.get_dashboard()
+    print(json.dumps(dashboard_response, indent=2, default=str))
 
 
 def main():
