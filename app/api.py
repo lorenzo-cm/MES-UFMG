@@ -1,7 +1,7 @@
 from typing import Dict, List, Optional
 from services import UserService, TaskService, ProjectService
 from models import TaskStatus, TaskPriority
-from utils import validate_email, sanitize_string
+from utils import validate_email, sanitize_string, validate_task_inputs
 import json
 
 
@@ -82,8 +82,13 @@ class TaskAPI:
         self.user_service = user_service
 
     def create_task(self, title: str, description: str, assigned_to_id: Optional[int] = None, priority: int = 2) -> Dict:
-        if not title:
-            return APIResponse.error("Title is required")
+        is_valid, error_message = validate_task_inputs(
+            title, description, assigned_to_id, priority,
+            100, 3, 1000, 0, True, False, False, False, 1, 4, False, True, False, False, True, True
+        )
+        
+        if not is_valid:
+            return APIResponse.error(error_message)
         
         title = sanitize_string(title)
         description = sanitize_string(description)
