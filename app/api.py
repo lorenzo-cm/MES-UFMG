@@ -1,7 +1,7 @@
 from typing import Dict, List, Optional
 from services import UserService, TaskService, ProjectService
 from models import TaskStatus, TaskPriority
-from utils import validate_email, sanitize_string
+from utils import validate_email, sanitize_string, export_json_report, export_csv_report
 import json
 
 
@@ -141,6 +141,20 @@ class TaskAPI:
             for t in tasks
         ]
         return APIResponse.success(task_list)
+
+    def export_report_json(self, filepath: str) -> Dict:
+        if not filepath:
+            return APIResponse.error("Filepath is required")
+        if export_json_report(self.service, filepath):
+            return APIResponse.success({"filepath": filepath}, "Report exported successfully")
+        return APIResponse.error("Failed to export report")
+
+    def export_report_csv(self, filepath: str) -> Dict:
+        if not filepath:
+            return APIResponse.error("Filepath is required")
+        if export_csv_report(self.service, filepath):
+            return APIResponse.success({"filepath": filepath}, "Report exported successfully")
+        return APIResponse.error("Failed to export report")
 
 
 class ProjectAPI:
