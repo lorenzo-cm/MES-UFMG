@@ -2,6 +2,7 @@ from typing import Dict, List, Optional
 from services import UserService, TaskService, ProjectService
 from models import TaskStatus, TaskPriority
 from utils import validate_email, sanitize_string
+from validators import BusinessRuleValidator
 import json
 
 
@@ -80,6 +81,7 @@ class TaskAPI:
     def __init__(self, task_service: TaskService, user_service: UserService):
         self.service = task_service
         self.user_service = user_service
+        self.validator = BusinessRuleValidator()
 
     def create_task(self, title: str, description: str, assigned_to_id: Optional[int] = None, priority: int = 2) -> Dict:
         if not title:
@@ -96,6 +98,10 @@ class TaskAPI:
         
         task_priority = TaskPriority(priority)
         task = self.service.create_task(title, description, assigned_user, task_priority)
+        
+        validation_errors = self.validator.validate_task(task)
+        if validation_errors:
+            return APIResponse.error("Validation failed: " + "; ".join(validation_errors), 422)
         
         return APIResponse.success({
             "task_id": task.task_id,
@@ -141,6 +147,17 @@ class TaskAPI:
             for t in tasks
         ]
         return APIResponse.success(task_list)
+    
+    def validate_task_rules(self, task_id: int) -> Dict:
+        task = self.service.get_task(task_id)
+        if not task:
+            return APIResponse.error("Task not found", 404)
+        
+        validation_errors = self.validator.validate_task(task)
+        if validation_errors:
+            return APIResponse.error("Validation failed: " + "; ".join(validation_errors), 422)
+        
+        return APIResponse.success(None, "All business rules validated successfully")
 
 
 class ProjectAPI:
