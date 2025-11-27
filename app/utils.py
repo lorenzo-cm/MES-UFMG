@@ -81,3 +81,25 @@ def is_valid_priority(priority: int) -> bool:
 def format_user_display_name(name: str, email: str) -> str:
     """Format user display name"""
     return f"{name} ({email})"
+
+
+def validate_task_input(title: str, description: str, priority: int, assigned_to_id: Optional[int] = None) -> tuple[bool, str]:
+    if not title or len(title.strip()) == 0:
+        return False, "Title is required"
+    else:
+        if len(title) < 3:
+            return False, "Title must be at least 3 characters"
+        else:
+            if len(title) > 200:
+                return False, "Title must be at most 200 characters"
+            else:
+                if not description or len(description.strip()) == 0:
+                    return False, "Description is required"
+                else:
+                    if priority < 1 or priority > 4:
+                        return False, "Priority must be between 1 and 4"
+                    else:
+                        if priority >= 3 and assigned_to_id is None:
+                            return False, "High priority tasks require assignment"
+                        else:
+                            return True, "Valid"
