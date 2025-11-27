@@ -2,6 +2,7 @@ from typing import Dict, List, Optional
 from services import UserService, TaskService, ProjectService
 from models import TaskStatus, TaskPriority
 from utils import validate_email, sanitize_string
+from notification_service import NotificationService
 import json
 
 
@@ -77,9 +78,10 @@ class UserAPI:
 
 
 class TaskAPI:
-    def __init__(self, task_service: TaskService, user_service: UserService):
+    def __init__(self, task_service: TaskService, user_service: UserService, notification_service: Optional[NotificationService] = None):
         self.service = task_service
         self.user_service = user_service
+        self.notification_service = notification_service
 
     def create_task(self, title: str, description: str, assigned_to_id: Optional[int] = None, priority: int = 2) -> Dict:
         if not title:
@@ -96,6 +98,9 @@ class TaskAPI:
         
         task_priority = TaskPriority(priority)
         task = self.service.create_task(title, description, assigned_user, task_priority)
+        
+        if self.notification_service and assigned_user:
+            self.notification_service.send_task_notification(assigned_user, task, "created")
         
         return APIResponse.success({
             "task_id": task.task_id,
@@ -125,7 +130,19 @@ class TaskAPI:
         except ValueError:
             return APIResponse.error("Invalid status")
         
+        task = self.service.get_task(task_id)
+        if not task:
+            return APIResponse.error("Task not found", 404)
+        
+        old_status = task.status
         if self.service.update_task_status(task_id, task_status):
+            if self.notification_service and task.assigned_to:
+                self.notification_service.send_task_notification(
+                    task.assigned_to, 
+                    task, 
+                    "status_changed",
+                    old_status=old_status
+                )
             return APIResponse.success(None, "Task status updated")
         return APIResponse.error("Task not found", 404)
 
@@ -203,3 +220,18 @@ class ProjectAPI:
             for p in projects
         ]
         return APIResponse.success(project_list)
+
+
+class NotificationAPI:
+    def __init__(self, notification_service: NotificationService):
+        self.service = notification_service
+
+    def get_notification_log(self, user_id: Optional[int] = None, task_id: Optional[int] = None) -> Dict:
+        """Get notification log entries"""
+        log_entries = self.service.get_notification_log(user_id, task_id)
+        return APIResponse.success(log_entries)
+
+    def clear_log(self) -> Dict:
+        """Clear notification log"""
+        self.service.clear_log()
+        return APIResponse.success(None, "Notification log cleared")
