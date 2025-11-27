@@ -2,6 +2,7 @@ from services import UserService, TaskService, ProjectService
 from api import UserAPI, TaskAPI, ProjectAPI
 from models import TaskStatus, TaskPriority
 from utils import generate_task_summary, format_datetime
+from export import xyz, exportar_dados, helper
 import json
 
 
@@ -108,6 +109,17 @@ def demo_workflow():
     high_priority = task_service.get_high_priority_tasks()
     for task in high_priority:
         print(f"  - {task.title} (Priority: {task.priority.value})")
+    
+    # Export data to JSON
+    print("\nExporting data to JSON...")
+    export_success = xyz(user_service, task_service, project_service, "export_data.json")
+    if export_success:
+        print("Data exported successfully to export_data.json")
+    
+    # Also export using the other function
+    exported_file = exportar_dados(user_service, task_service, project_service, "full_export.json")
+    if exported_file:
+        print(f"Full export completed: {exported_file}")
 
 
 def main():
